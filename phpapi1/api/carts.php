@@ -14,13 +14,13 @@ switch ($method) {
         break;
     case 'POST':
         if(isset($_GET['id'])){
-            // updateCarts();
+            updateCarts();
         }else{
             createCarts();
         }
         break;
     case 'PUT':
-        // deleteCarts();
+        deleteCarts();
         break;
     default:
         echo json_encode(["message" => "Invalid request method"]);
@@ -50,33 +50,52 @@ function createCarts(){
     global $pdo;
     $data = json_decode(file_get_contents('php://input'), true);
 
-    // Debugging: Check incoming data
+    // Debugging: Log incoming data
+    file_put_contents('debug.log', print_r($data, true));
+
     if (json_last_error() !== JSON_ERROR_NONE) {
         echo json_encode(['message' => "Invalid JSON input"]);
         return;
     }
 
-    // Prepare the insert statement
-    $stmt = $pdo->prepare("INSERT INTO Payments (user_id, products_id, quantity, active) VALUES(:user_id, :products_id, :quantity, :active) ");
+    if (!isset($data['user_id'], $data['products_id'], $data['quantity']) || !is_numeric($data['products_id']) || !is_numeric($data['user_id'])) {
+        echo json_encode(['message' => "Error: Missing or invalid fields"]);
+        return;
+    }
 
-    // Execute the statement
+    // Check if the product exists
+    $checkProductStmt = $pdo->prepare("SELECT COUNT(*) FROM products WHERE id = :products_id");
+    $checkProductStmt->execute([":products_id" => $data['products_id']]);
+    $productExists = $checkProductStmt->fetchColumn();
+
+    if (!$productExists) {
+        echo json_encode(['message' => "Error: Product ID does not exist"]);
+        return;
+    }
+
+    // Insert into carts
+    $stmt = $pdo->prepare("INSERT INTO carts (user_id, products_id, quantity, active) VALUES(:user_id, :products_id, :quantity, :active)");
+    
     try {
-        if($stmt->execute([
+        $pdo->beginTransaction();
+        if ($stmt->execute([
             ":user_id" => $data['user_id'],
             ":products_id" => $data['products_id'],
             ":quantity" => $data['quantity'],
-            ":active" => 1 // Default to active status
-                    
-        ])){
-            echo json_encode(['message' => "Carts created successfully"]);
+            ":active" => 1
+        ])) {
+            $pdo->commit();
+            echo json_encode(['message' => "Cart created successfully"]);
         } else {
-            echo json_encode(['message' => "Unable to create Carts"]);
+            $pdo->rollBack();
+            echo json_encode(['message' => "Unable to create Cart"]);
         }
     } catch (PDOException $e) {
+        $pdo->rollBack();
         echo json_encode(['message' => "Database error: " . $e->getMessage()]);
     }
 }
-
+ 
 
 
 
@@ -87,13 +106,14 @@ function updateCarts() {
     $data = json_decode(file_get_contents('php://input'), true);
 
     // Corrected SQL query
-    $stmt = $pdo->prepare("UPDATE Carts SET order_id = :order_id, amount = :amount WHERE user_id = :user_id");
+    $stmt = $pdo->prepare("UPDATE Carts SET products_id = :products_id, quantity = :quantity WHERE user_id = :user_id");
 
     // Execute the statement
     if ($stmt->execute([
-        ":order_id" => $data['order_id'],
-        ":amount" => $data['amount'],
-        ":user_id" => $id  // The ID to update
+        ":products_id" => $data['products_id'],
+        ":quantity" => $data['quantity'],
+        ":user_id" => $id  // The ID to update by
+        
     ])) {
         echo json_encode(['message' => "Carts updated successfully"]);
     } else {
@@ -106,7 +126,7 @@ function deleteCarts(){
     global $pdo;
     $id = $_GET['id'];
 
-    $stmt = $pdo->prepare("update Payments set active = 0 where id = :id");
+    $stmt = $pdo->prepare("update Carts set active = 0 where id = :id");
     if($stmt->execute([':id' => $id])){
         echo json_encode(['message' => "Carts deleted successfully"]);
     } else {

@@ -117,6 +117,23 @@
         )";
         $pdo->query($sqlCarts);	
 
+        $sqlShippings = "create table if not exists shippings(
+                        id integer auto_increment primary key,
+                        order_id integer,
+                        user_id integer,
+                        address varchar(200),
+                        status varchar(20),
+                        tracking_number varchar(20),
+                        active integer default 1,
+                        display tinyint,
+                        create_at timestamp default current_timestamp,
+                        update_at timestamp default current_timestamp on update current_timestamp,
+                        foreign key (order_id) references orders(id) on delete cascade,
+                        foreign key (user_id) references users(id) on delete cascade
+
+        )";
+        $pdo->query($sqlShippings);
+
         echo "Tables created successfully";
     }catch(PDOException $e){
         die("Connection failed: ". $e->getMessage());

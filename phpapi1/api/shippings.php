@@ -10,43 +10,43 @@ $method = $_SERVER['REQUEST_METHOD'];
 
 switch ($method) {
     case 'GET':
-        getPayments();
+        getShippings();
         break;
     case 'POST':
         if(isset($_GET['id'])){
-            updatePayments();
+            updateShippings();
         }else{
-            createPayments();
+            createShippings();
         }
         break;
     case 'PUT':
-        deletePayments();
+        deleteShippings();
         break;
     default:
         echo json_encode(["message" => "Invalid request method"]);
         break;
 }
 
-function getPayments(){
+function getShippings(){
     global $pdo;
     if(isset($_GET['id'])){
         $id = $_GET['id'];
-        $stmt = $pdo->prepare("select * from Payments where id = :id");
+        $stmt = $pdo->prepare("select * from Shippings where id = :id");
         $stmt->execute([':id' => $id]);
         $result = $stmt->fetch(PDO::FETCH_ASSOC);
         if($result){
             echo json_encode($result);
         }else {
-            echo json_encode(["message" => "Payments not found"]);
+            echo json_encode(["message" => "Shippings not found"]);
         }
     }else{
-        $stmt = $pdo->query("select * from Payments");
+        $stmt = $pdo->query("select * from Shippings");
         $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
         echo json_encode($result);
     }
 }
 
-function createPayments(){
+function createShippings(){
     global $pdo;
     $data = json_decode(file_get_contents('php://input'), true);
 
@@ -57,19 +57,21 @@ function createPayments(){
     }
 
     // Prepare the insert statement
-    $stmt = $pdo->prepare("INSERT INTO Payments (order_id, user_id, amount, active) VALUES(:order_id, :user_id, :amount, :active) ");
+    $stmt = $pdo->prepare("INSERT INTO Shippings (order_id, user_id, address, tracking_number, active) VALUES(:order_id, :user_id, :address, :tracking_number, :active) ");
 
     // Execute the statement
     try {
         if($stmt->execute([
             ":order_id" => $data['order_id'],
             ":user_id" => $data['user_id'],
-            ":amount" => $data['amount'],
-            ":active" => 1 // Default to active status         
+            ":address" => $data['address'],
+            ":tracking_number" => $data['tracking_number'],
+            ":active" => 1 // Default to active status
+                    
         ])){
-            echo json_encode(['message' => "Payments created successfully"]);
+            echo json_encode(['message' => "Shippings created successfully"]);
         } else {
-            echo json_encode(['message' => "Unable to create Payments"]);
+            echo json_encode(['message' => "Unable to create Shippings"]);
         }
     } catch (PDOException $e) {
         echo json_encode(['message' => "Database error: " . $e->getMessage()]);
@@ -80,36 +82,36 @@ function createPayments(){
 
 
 
-function updatePayments() {
+function updateShippings() {
     global $pdo;
     $id = $_GET['id'];
     $data = json_decode(file_get_contents('php://input'), true);
 
     // Corrected SQL query
-    $stmt = $pdo->prepare("UPDATE Payments SET order_id = :order_id, amount = :amount WHERE user_id = :user_id");
+    $stmt = $pdo->prepare("UPDATE Shippings SET order_id = :order_id, address = :address WHERE user_id = :user_id");
 
     // Execute the statement
     if ($stmt->execute([
         ":order_id" => $data['order_id'],
-        ":amount" => $data['amount'],
+        ":address" => $data['address'],
         ":user_id" => $id  // The ID to update
     ])) {
-        echo json_encode(['message' => "Payments updated successfully"]);
+        echo json_encode(['message' => "Shippings updated successfully"]);
     } else {
-        echo json_encode(['message' => "Unable to update Payments"]);
+        echo json_encode(['message' => "Unable to update Shippings"]);
     }
 }
 
 
-function deletePayments(){
+function deleteShippings(){
     global $pdo;
     $id = $_GET['id'];
 
-    $stmt = $pdo->prepare("update Payments set active = 0 where id = :id");
+    $stmt = $pdo->prepare("update Shippings set active = 0 where id = :id");
     if($stmt->execute([':id' => $id])){
-        echo json_encode(['message' => "Payments deleted successfully"]);
+        echo json_encode(['message' => "Shippings deleted successfully"]);
     } else {
-        echo json_encode(['message' => "Unable to delete Payments"]);
+        echo json_encode(['message' => "Unable to delete Shippings"]);
     }
 }
 ?>
