@@ -6,7 +6,7 @@ $ecommerce = new Ecommerce();
 
 $method = $_SERVER['REQUEST_METHOD'];
 
-switch($method) {
+switch ($method) {
     case 'GET':
         $ecommerce->getItem("Categories", "");
         break;
@@ -21,12 +21,12 @@ switch($method) {
         }
         break;
     case 'PUT':
-        $id = $_GET['id'];
-        $data = json_decode(file_get_contents('php://input'), true);
-        $ecommerce->deleteItem("Categories", $id);
+            $id = $_GET['id'];
+            $data = json_decode(file_get_contents('php://input'), true);
+            $ecommerce->deleteItem("Categories", $id);
         break;
     default:
-        echo json_encode(["message" => "Invalid request method"]);
+            echo json_encode(["message" => "Invalid request method"]);
         break;
-    }
+}
 ?>

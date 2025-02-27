@@ -14,7 +14,7 @@ switch ($method) {
         if(isset($_GET['id'])){
             $id = $_GET['id'];
             $data = json_decode(json: file_get_contents(filename: 'php://input'), associative:true);
-            $ecommerce->updateItem("Categories", $data, $id);
+            $ecommerce->updateItem("Carts", $data, $id);
         }else{
             $data = json_decode(file_get_contents('php://input'), true);
             $ecommerce->createItem("Carts", $data);
